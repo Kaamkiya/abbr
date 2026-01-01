@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/Kaamkiya/nanoid-go"
@@ -11,8 +10,6 @@ var pairs = map[string]string{}
 
 func main() {
 	http.HandleFunc("/create", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println(r)
-
 		if r.Pattern != "/create" {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -30,23 +27,23 @@ func main() {
 
 		r.ParseForm()
 		to := r.Form.Get("to")
-		html := r.Form.Get("webform") == "true"
-		add := true
+		isHTML := r.Form.Get("webform") == "true"
+		shouldAdd := true
 		key := nanoid.Default()
 
 		for k, urlTo := range pairs {
 			if urlTo == to {
-				add = false
+				shouldAdd = false
 				key = k
 			}
 		}
 
-		if add {
+		if shouldAdd {
 			pairs[key] = to
 		}
 
-		if html {
-			w.Write([]byte(`<!DOCTYPE html><p>Short URL: <a href="/` + key + `">` + key + `</a></p>`))
+		if isHTML {
+			w.Write([]byte(`<!DOCTYPE html><p>Short URL: http://localhost:4000/` + key + `</p>`))
 			return
 		}
 
@@ -54,12 +51,14 @@ func main() {
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println(r)
-
 		path := r.URL.Path
-		if path[0] == '/' {
-			path = path[1:]
+
+		if path == "/" {
+			http.Redirect(w, r, "/create", http.StatusPermanentRedirect)
+			return
 		}
+
+		path = path[1:]
 
 		to := pairs[path]
 
